@@ -98,14 +98,40 @@ async def main():
         await browser.close()
 
     if all_tracks:
-        print(f"\nTotal matches found: {len(all_tracks)}")
+        print(f"\nTotal matches found before deduping: {len(all_tracks)}")
+        
+        # Remove duplicates based on Artist, Album, Title
+        unique_tracks = []
+        seen_tracks = set()
+        
+        for track in all_tracks:
+            # Create a unique key for the track
+            track_key = (track['Artist'], track['Album'], track['Title'])
+            
+            if track_key not in seen_tracks:
+                seen_tracks.add(track_key)
+                unique_tracks.append(track)
+                
+        print(f"Total unique matches found: {len(unique_tracks)}")
+
         # Write to CSV
         keys = ["Title", "Artist", "Album", "Source Playlist", "Date Added"]
         with open(output_file, 'w', newline='', encoding='utf-8') as f:
             dict_writer = csv.DictWriter(f, fieldnames=keys)
             dict_writer.writeheader()
-            dict_writer.writerows(all_tracks)
+            dict_writer.writerows(unique_tracks)
         print(f"Saved to {output_file}")
+        
+        # Trigger Spotify Export
+        print("\n--- Starting Spotify Export ---")
+        import subprocess
+        try:
+            subprocess.run(["python3", "export_to_spotify.py", output_file], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error running Spotify export: {e}")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            
     else:
         print("\nNo matching tracks found (Yesterday/This Week).")
         # Create empty CSV with headers just in case

@@ -13,3 +13,4 @@ antigravity_implementation_plan.md
 
 # Data files
 *.csv
+.cache
